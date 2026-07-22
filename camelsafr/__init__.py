@@ -51,10 +51,35 @@ def basins(level: str = "L1", *, cache: bool = False) -> pd.DataFrame:
     return df[keep].reset_index(drop=True)
 
 
-# Stubs — implemented in later tasks
-def timeseries(level="L1", *, basin_ids=None, freq="annual",
-               variables=None, cache=False, as_xarray=False):
-    raise NotImplementedError
+def timeseries(
+    level: str = "L1",
+    *,
+    basin_ids: Optional[list] = None,
+    freq: str = "annual",
+    variables: Optional[list] = None,
+    cache: bool = False,
+    as_xarray: bool = False,
+) -> pd.DataFrame:
+    """Return climate timeseries for the given level and frequency."""
+    _validate_level(level)
+    if freq not in FREQ_TO_FILE:
+        raise ValueError(f"freq must be one of {list(FREQ_TO_FILE)}, got {freq!r}")
+
+    filters = [("Basin_ID", "in", basin_ids)] if basin_ids is not None else None
+
+    columns: Optional[list] = None
+    if variables is not None:
+        time_col = "Year" if freq == "annual" else "Date"
+        columns = list({"Basin_ID", time_col, *variables})
+
+    import camelsafr._io as _io
+    url = timeseries_url(level, freq)
+    df = _io.read_parquet(url, cache=cache, filters=filters, columns=columns)
+
+    if as_xarray:
+        from camelsafr._xarray import to_xarray
+        return to_xarray(df, freq)
+    return df
 
 
 def info() -> None:
