@@ -9,7 +9,7 @@ from camelsafr._urls import (
     STATIC_CATEGORIES, VALID_LEVELS, FREQ_TO_FILE,
     static_url, timeseries_url,
 )
-from camelsafr._io import read_parquet, cache_path, _cache_dir
+import camelsafr._io as _io
 
 __version__ = "0.1.0"
 __all__ = ["attrs", "timeseries", "basins", "info", "clear_cache"]
@@ -27,7 +27,7 @@ def attrs(level: str = "L1", *, cache: bool = False) -> pd.DataFrame:
     for cat in STATIC_CATEGORIES:
         url = static_url(level, cat)
         try:
-            frames.append(read_parquet(url, cache=cache))
+            frames.append(_io.read_parquet(url, cache=cache))
         except Exception:
             continue
 
@@ -45,7 +45,7 @@ def basins(level: str = "L1", *, cache: bool = False) -> pd.DataFrame:
     """Return basin metadata (id, lat, lng, country) for the given level."""
     _validate_level(level)
     url = static_url(level, "location")
-    df = read_parquet(url, cache=cache)
+    df = _io.read_parquet(url, cache=cache)
     keep = [c for c in ["Basin_ID", "lat", "lng", "country", "country_iso3"]
             if c in df.columns]
     return df[keep].reset_index(drop=True)
@@ -72,7 +72,6 @@ def timeseries(
         time_col = "Year" if freq == "annual" else "Date"
         columns = list({"Basin_ID", time_col, *variables})
 
-    import camelsafr._io as _io
     url = timeseries_url(level, freq)
     df = _io.read_parquet(url, cache=cache, filters=filters, columns=columns)
 

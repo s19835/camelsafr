@@ -2,8 +2,8 @@ import pytest
 import pandas as pd
 import camelsafr as ca
 
-# monkeypatch target: "camelsafr.read_parquet" — patching the name bound in __init__
-_PATCH = "camelsafr.read_parquet"
+# monkeypatch target: "camelsafr._io.read_parquet" — patching the module reference
+_PATCH = "camelsafr._io.read_parquet"
 
 FAKE_DF = pd.DataFrame({
     "Basin_ID": ["L1_001", "L1_002"],
