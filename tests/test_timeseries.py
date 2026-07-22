@@ -89,3 +89,21 @@ def test_timeseries_daily_uses_date_col_for_variables(monkeypatch):
     monkeypatch.setattr("camelsafr._io.read_parquet", fake_read)
     ca.timeseries(level="L1", freq="daily", variables=["p_mean_arc"])
     assert "Date" in kwargs_seen["columns"]
+
+
+def test_timeseries_as_xarray_returns_dataset(monkeypatch):
+    xr = pytest.importorskip("xarray")
+    monkeypatch.setattr("camelsafr._io.read_parquet", lambda url, **kw: ANNUAL_DF)
+    ds = ca.timeseries(level="L1", freq="annual", as_xarray=True)
+    assert isinstance(ds, xr.Dataset)
+    assert "Basin_ID" in ds.dims or "Basin_ID" in ds.coords
+    assert "Year" in ds.dims or "Year" in ds.coords
+
+
+def test_timeseries_xarray_not_installed(monkeypatch):
+    import sys
+    monkeypatch.setattr("camelsafr._io.read_parquet", lambda url, **kw: ANNUAL_DF)
+    # Simulate xarray not installed
+    monkeypatch.setitem(sys.modules, "xarray", None)
+    with pytest.raises(ImportError, match="xarray is required"):
+        ca.timeseries(level="L1", freq="annual", as_xarray=True)
