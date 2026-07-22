@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "camelsafr"
+version = "0.1.0"
+description = "Python client for the CAMELS-Afr African basin hydrological database"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+keywords = ["hydrology", "Africa", "CAMELS", "basins", "water"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Hydrology",
+]
+dependencies = [
+    "pyarrow>=14",
+    "pandas>=2.0",
+]
+
+[project.optional-dependencies]
+xarray = ["xarray>=2023.1"]
+dev = ["pytest>=7", "pytest-cov"]
+
+[project.urls]
+Homepage = "https://github.com/cgiar-hydrology/camelsafr"
+Documentation = "https://camelsafr.readthedocs.io"
