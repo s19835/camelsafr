@@ -1,6 +1,7 @@
 """camelsafr — Python client for the CAMELS-Afr hydrological database."""
 from __future__ import annotations
 
+import shutil
 from typing import Optional
 
 import pandas as pd
@@ -82,8 +83,33 @@ def timeseries(
 
 
 def info() -> None:
-    raise NotImplementedError
+    """Print a summary of available levels, basin counts, and data coverage."""
+    BASIN_COUNTS = {"L1": 37, "L2": 238, "L3": 3_533, "L4": 12_129}
+    print("CAMELS-Afr dataset summary")
+    print("  Levels:")
+    for lvl, n in BASIN_COUNTS.items():
+        print(f"    {lvl}: {n:,} basins")
+    print("  Static attributes: 216 per basin "
+          "(climate, hydrology, location, geology, soil, land cover)")
+    print("  Timeseries: daily / monthly / annual (1980–2024)")
+    print("  Precipitation products: ARC, CHIRPS, IMERG, MSWEP")
+    print(f"  CDN: https://d3w56ds7wplvdd.cloudfront.net/parquet/")
+    print(f"  Cache: {_io._cache_dir()}")
 
 
 def clear_cache(level: Optional[str] = None) -> None:
-    raise NotImplementedError
+    """Remove cached Parquet files.
+
+    Parameters
+    ----------
+    level : str, optional
+        If given, remove only that level's cache. If None, wipe everything.
+    """
+    root = _io._cache_dir()
+    if level is not None:
+        _validate_level(level)
+        target = root / level
+    else:
+        target = root
+    if target.exists():
+        shutil.rmtree(target)
