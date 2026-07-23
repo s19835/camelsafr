@@ -77,3 +77,19 @@ def test_read_parquet_cache_hit_skips_download(fake_table, tmp_path, monkeypatch
             read_parquet(url, cache=True)
 
     assert downloaded == []  # no download on cache hit
+
+
+def test_download_http_error(tmp_path, monkeypatch):
+    from camelsafr._io import _download
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    url = "https://cdn.example.com/missing.parquet"
+    dest = tmp_path / "camelsafr" / "L1" / "missing.parquet"
+
+    mock_resp = MagicMock()
+    mock_resp.status = 404
+    mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+    mock_resp.__exit__ = MagicMock(return_value=False)
+
+    with patch("urllib.request.urlopen", return_value=mock_resp):
+        with pytest.raises(RuntimeError, match="HTTP 404"):
+            _download(url, dest)

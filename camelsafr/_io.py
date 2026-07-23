@@ -22,7 +22,10 @@ def cache_path(level: str, filename: str) -> Path:
 
 def _download(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    urllib.request.urlretrieve(url, dest)
+    with urllib.request.urlopen(url) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"HTTP {resp.status} fetching {url}")
+        dest.write_bytes(resp.read())
 
 
 def read_parquet(
