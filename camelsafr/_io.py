@@ -43,7 +43,11 @@ def read_parquet(
             _download(url, local)
         source: str | Path = local
     else:
-        source = url
+        import io as _io_mod
+        with urllib.request.urlopen(url) as resp:
+            if resp.status != 200:
+                raise RuntimeError(f"HTTP {resp.status} fetching {url}")
+            source = _io_mod.BytesIO(resp.read())
 
     table = pq.read_table(source, filters=filters, columns=columns)
     return table.to_pandas()

@@ -23,27 +23,39 @@ def test_cache_path(tmp_path, monkeypatch):
     assert p == tmp_path / "camelsafr" / "L3" / "L3_climate_annual.parquet"
 
 
+def _mock_urlopen(fake_table):
+    """Return a context-manager mock whose .read() yields fake parquet bytes."""
+    import io
+    import pyarrow.parquet as pq_mod
+    buf = io.BytesIO()
+    pq_mod.write_table(fake_table, buf)
+    buf.seek(0)
+    mock_resp = MagicMock()
+    mock_resp.status = 200
+    mock_resp.read.return_value = buf.read()
+    mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    return mock_resp
+
+
 def test_read_parquet_no_cache(fake_table, monkeypatch):
-    with patch("camelsafr._io.pq.read_table", return_value=fake_table) as mock_read:
+    mock_resp = _mock_urlopen(fake_table)
+    with patch("urllib.request.urlopen", return_value=mock_resp):
         df = read_parquet("https://cdn.example.com/L1_climate_annual.parquet")
-    mock_read.assert_called_once_with(
-        "https://cdn.example.com/L1_climate_annual.parquet",
-        filters=None,
-        columns=None,
-    )
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
 
 
 def test_read_parquet_passes_filters(fake_table, monkeypatch):
-    with patch("camelsafr._io.pq.read_table", return_value=fake_table) as mock_read:
-        read_parquet("https://cdn.example.com/L1_climate_annual.parquet",
-                     filters=[("Basin_ID", "in", ["L1_001"])])
-    mock_read.assert_called_once_with(
-        "https://cdn.example.com/L1_climate_annual.parquet",
-        filters=[("Basin_ID", "in", ["L1_001"])],
-        columns=None,
-    )
+    mock_resp = _mock_urlopen(fake_table)
+    with patch("urllib.request.urlopen", return_value=mock_resp):
+        with patch("camelsafr._io.pq.read_table", return_value=fake_table) as mock_read:
+            read_parquet("https://cdn.example.com/L1_climate_annual.parquet",
+                         filters=[("Basin_ID", "in", ["L1_001"])])
+    # filters are passed to read_table after BytesIO download
+    mock_read.assert_called_once()
+    _, kwargs = mock_read.call_args
+    assert kwargs["filters"] == [("Basin_ID", "in", ["L1_001"])]
 
 
 def test_read_parquet_cache_miss_downloads(fake_table, tmp_path, monkeypatch):
