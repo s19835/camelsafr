@@ -1,6 +1,6 @@
 site_name: camelsafr
 site_description: Python client for the CAMELS-Afr African basin hydrological database
-repo_url: https://github.com/cgiar-hydrology/camelsafr
+repo_url: https://github.com/s19835/camelsafr
 
 theme:
   name: material
